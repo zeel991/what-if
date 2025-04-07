@@ -23,7 +23,7 @@ interface EthData {
   priceChange: number;
 }
 
-const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = 'https://what-if-2kx0.onrender.com';
 const ERROR_MESSAGES = {
   INVALID_ADDRESS: 'Invalid Ethereum address - Did you copy that right?',
   INVALID_AMOUNT: 'Please enter a valid ETH amount , Atleast imagine you are rich for a second.',
