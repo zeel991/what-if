@@ -30,8 +30,10 @@ interface EthData {
   priceChange: number;
 }
 
-const BACKEND_URL = "http://localhost:5000";
-const ERROR_MESSAGES = {
+const BACKEND_URL = process.env.NODE_ENV === 'production' 
+  ? '/api' 
+  : 'http://localhost:5000';
+  const ERROR_MESSAGES = {
   INVALID_ADDRESS: "Invalid Ethereum address - Did you copy that right?",
   INVALID_AMOUNT:
     "Please enter a valid ETH amount , Atleast imagine you are rich for a second.",
