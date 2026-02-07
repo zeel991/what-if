@@ -53,6 +53,9 @@ app.get("/eth-price", async (req, res) => {
   }
 });
 // Start the server
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+// Remove app.listen() for Vercel, or wrap it:
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => console.log(`Server on ${PORT}`));
+}
+
+export default app; // Vercel needs this export

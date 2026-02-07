@@ -1,7 +1,14 @@
-import { useState, useMemo, useCallback } from 'react';
-import { ethers } from 'ethers';
-import axios from 'axios';
-import { Wallet, TrendingUp, AlertCircle, Check, Loader2, DollarSign } from 'lucide-react';
+import { useState, useMemo, useCallback } from "react";
+import { ethers } from "ethers";
+import axios from "axios";
+import {
+  Wallet,
+  TrendingUp,
+  AlertCircle,
+  Check,
+  Loader2,
+  DollarSign,
+} from "lucide-react";
 
 interface CoinComparison {
   coin: string;
@@ -23,24 +30,29 @@ interface EthData {
   priceChange: number;
 }
 
-const BACKEND_URL = 'https://what-if-2kx0.onrender.com';
+const BACKEND_URL = "http://localhost:5000";
 const ERROR_MESSAGES = {
-  INVALID_ADDRESS: 'Invalid Ethereum address - Did you copy that right?',
-  INVALID_AMOUNT: 'Please enter a valid ETH amount , Atleast imagine you are rich for a second.',
-  NO_BALANCE: 'This wallet has no ETH balance! Try sending an address of NON-BROKE person.',
-  DEFAULT_ERROR: 'Failed to analyze wallet. Please try again in a few minutes.'
+  INVALID_ADDRESS: "Invalid Ethereum address - Did you copy that right?",
+  INVALID_AMOUNT:
+    "Please enter a valid ETH amount , Atleast imagine you are rich for a second.",
+  NO_BALANCE:
+    "This wallet has no ETH balance! Try sending an address of NON-BROKE person.",
+  DEFAULT_ERROR: "Failed to analyze wallet. Please try again in a few minutes.",
 };
 
-const formatUSD = (value: number) => 
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
-    .format(value);
+const formatUSD = (value: number) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 2,
+  }).format(value);
 
 const useEthAnalysis = () => {
-  const [address, setAddress] = useState('');
-  const [manualEthAmount, setManualEthAmount] = useState('');
+  const [address, setAddress] = useState("");
+  const [manualEthAmount, setManualEthAmount] = useState("");
   const [useManualEntry, setUseManualEntry] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [comparisons, setComparisons] = useState<CoinComparison[]>([]);
   const [ethData, setEthData] = useState<EthData>({
     balance: 0,
@@ -48,11 +60,14 @@ const useEthAnalysis = () => {
     monthAgoPrice: 0,
     valueMonthAgo: 0,
     currentValue: 0,
-    priceChange: 0
+    priceChange: 0,
   });
 
   const isValidAddress = useMemo(() => ethers.isAddress(address), [address]);
-  const isValidAmount = useMemo(() => parseFloat(manualEthAmount) > 0, [manualEthAmount]);
+  const isValidAmount = useMemo(
+    () => parseFloat(manualEthAmount) > 0,
+    [manualEthAmount]
+  );
 
   const validateInputs = useCallback(() => {
     if (useManualEntry) {
@@ -66,19 +81,19 @@ const useEthAnalysis = () => {
         return false;
       }
     }
-    setError('');
+    setError("");
     return true;
   }, [useManualEntry, isValidAddress, isValidAmount]);
 
   const analyzeWallet = useCallback(async () => {
     if (!validateInputs()) return;
-    
+
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       let ethAmountMonthBack = useManualEntry ? parseFloat(manualEthAmount) : 0;
-      
+
       if (!useManualEntry) {
         const balanceRes = await axios.get(`${BACKEND_URL}/balance/${address}`);
         ethAmountMonthBack = parseFloat(balanceRes.data);
@@ -97,13 +112,15 @@ const useEthAnalysis = () => {
         monthAgoPrice: MonthBackEthPrice,
         valueMonthAgo: ethAmountMonthBack * MonthBackEthPrice,
         currentValue: ethAmountMonthBack * CurrentEthPrice,
-        priceChange: ethPriceChange
+        priceChange: ethPriceChange,
       };
       setEthData(newEthData);
 
-      const { data: { symbolChangeArray } } = await axios.get(`${BACKEND_URL}/top-coins`);
-      
-      const processedComparisons = symbolChangeArray.map((coin: any) => 
+      const {
+        data: { symbolChangeArray },
+      } = await axios.get(`${BACKEND_URL}/top-coins`);
+
+      const processedComparisons = symbolChangeArray.map((coin: any) =>
         processCoinComparison(coin, newEthData, ethPriceChange)
       );
 
@@ -132,12 +149,16 @@ const useEthAnalysis = () => {
   };
 };
 
-const processCoinComparison = (coin: any, ethData: EthData, ethPriceChange: number): CoinComparison => {
+const processCoinComparison = (
+  coin: any,
+  ethData: EthData,
+  ethPriceChange: number
+): CoinComparison => {
   const tokenChange = parseFloat(coin.price_change_30d);
   const initialValue = ethData.valueMonthAgo;
-  
-  const ethValue = initialValue * (1 + (ethPriceChange / 100));
-  const tokenValue = initialValue * (1 + (tokenChange / 100));
+
+  const ethValue = initialValue * (1 + ethPriceChange / 100);
+  const tokenValue = initialValue * (1 + tokenChange / 100);
   const potentialGain = tokenValue - ethValue;
   const ethWinner = tokenChange <= ethPriceChange;
 
@@ -149,17 +170,19 @@ const processCoinComparison = (coin: any, ethData: EthData, ethPriceChange: numb
     priceChange: coin.price_change_30d,
     ethChange: ethPriceChange,
     tokenChange,
-    ethWinner
+    ethWinner,
   };
 };
 
-const sortComparisons = (comparisons: CoinComparison[]) => 
+const sortComparisons = (comparisons: CoinComparison[]) =>
   comparisons.sort((a, b) => {
     const aPositive = a.actualGain > 0;
     const bPositive = b.actualGain > 0;
-    
+
     if (aPositive !== bPositive) return aPositive ? -1 : 1;
-    return aPositive ? b.actualGain - a.actualGain : a.actualGain - b.actualGain;
+    return aPositive
+      ? b.actualGain - a.actualGain
+      : a.actualGain - b.actualGain;
   });
 
 const PortfolioDisplay = ({ ethData }: { ethData: EthData }) => (
@@ -170,7 +193,9 @@ const PortfolioDisplay = ({ ethData }: { ethData: EthData }) => (
     </h2>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="bg-white/5 rounded-lg p-6">
-        <h3 className="text-lg font-semibold mb-2">ETH Holdings One Month Ago</h3>
+        <h3 className="text-lg font-semibold mb-2">
+          ETH Holdings One Month Ago
+        </h3>
         <p className="text-3xl font-bold text-green-400">
           {ethData.balance.toFixed(4)} ETH
         </p>
@@ -190,14 +215,16 @@ const PortfolioDisplay = ({ ethData }: { ethData: EthData }) => (
 
 const CoinComparisonItem = ({ coin }: { coin: CoinComparison }) => {
   const gainColor = useMemo(() => {
-    if (coin.ethWinner) return 'text-green-400';
-    if (coin.actualGain > 0) return coin.potentialGain > 1000 ? 'text-green-400' : 'text-yellow-400';
-    return coin.potentialGain >= 3000 ? 'text-red-400' : 'text-yellow-400';
+    if (coin.ethWinner) return "text-green-400";
+    if (coin.actualGain > 0)
+      return coin.potentialGain > 1000 ? "text-green-400" : "text-yellow-400";
+    return coin.potentialGain >= 3000 ? "text-red-400" : "text-yellow-400";
   }, [coin]);
 
   const gainMessage = useMemo(() => {
     if (coin.ethWinner) return "You made the right choice! 🎯";
-    if (coin.actualGain > 0) return `You could have made an extra ${formatUSD(coin.potentialGain)}!`;
+    if (coin.actualGain > 0)
+      return `You could have made an extra ${formatUSD(coin.potentialGain)}!`;
     return `You could have saved ${formatUSD(Math.abs(coin.potentialGain))}`;
   }, [coin]);
 
@@ -219,9 +246,7 @@ const CoinComparisonItem = ({ coin }: { coin: CoinComparison }) => {
         <p className="text-lg">
           If you had converted your ETH to {coin.symbol} one month ago:
         </p>
-        <p className={`text-2xl font-bold mt-2 ${gainColor}`}>
-          {gainMessage}
-        </p>
+        <p className={`text-2xl font-bold mt-2 ${gainColor}`}>{gainMessage}</p>
       </div>
     </div>
   );
@@ -253,7 +278,9 @@ function App() {
               <Wallet className="w-10 h-10" />
               Ethereum What-If Machine
             </h1>
-            <p className="text-gray-300">Discover the road not taken (and maybe cry a little) 😢</p>
+            <p className="text-gray-300">
+              Discover the road not taken (and maybe cry a little) 😢
+            </p>
           </div>
 
           <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 mb-8">
@@ -262,7 +289,9 @@ function App() {
                 <button
                   onClick={() => setUseManualEntry(false)}
                   className={`px-4 py-2 rounded-lg ${
-                    !useManualEntry ? 'bg-purple-600' : 'bg-white/10 hover:bg-white/20'
+                    !useManualEntry
+                      ? "bg-purple-600"
+                      : "bg-white/10 hover:bg-white/20"
                   } transition-colors`}
                 >
                   Use Wallet Address
@@ -270,17 +299,21 @@ function App() {
                 <button
                   onClick={() => setUseManualEntry(true)}
                   className={`px-4 py-2 rounded-lg ${
-                    useManualEntry ? 'bg-purple-600' : 'bg-white/10 hover:bg-white/20'
+                    useManualEntry
+                      ? "bg-purple-600"
+                      : "bg-white/10 hover:bg-white/20"
                   } transition-colors`}
                 >
                   Enter ETH Manually
                 </button>
               </div>
 
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                analyzeWallet();
-              }}>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  analyzeWallet();
+                }}
+              >
                 <div className="flex flex-col gap-4">
                   {!useManualEntry ? (
                     <input
@@ -309,15 +342,18 @@ function App() {
 
                   <button
                     type="submit"
-                    disabled={(useManualEntry ? !isValidAmount : !isValidAddress) || loading}
+                    disabled={
+                      (useManualEntry ? !isValidAmount : !isValidAddress) ||
+                      loading
+                    }
                     className={`px-6 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 ${
                       (useManualEntry ? isValidAmount : isValidAddress)
-                        ? 'bg-purple-600 hover:bg-purple-700'
-                        : 'bg-gray-600 cursor-not-allowed'
+                        ? "bg-purple-600 hover:bg-purple-700"
+                        : "bg-gray-600 cursor-not-allowed"
                     }`}
                   >
                     {loading && <Loader2 className="w-5 h-5 animate-spin" />}
-                    {loading ? 'Analyzing...' : 'Show Me What Could Have Been'}
+                    {loading ? "Analyzing..." : "Show Me What Could Have Been"}
                   </button>
                 </div>
               </form>
@@ -340,14 +376,16 @@ function App() {
           {loading && (
             <div className="text-center py-12">
               <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4" />
-              <p className="text-gray-300">Calculating your alternate timeline wealth...</p>
+              <p className="text-gray-300">
+                Calculating your alternate timeline wealth...
+              </p>
             </div>
           )}
 
           {!loading && ethData.balance > 0 && (
             <div className="space-y-8">
               <PortfolioDisplay ethData={ethData} />
-              
+
               <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6">
                 <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
                   <TrendingUp className="w-6 h-6" />
