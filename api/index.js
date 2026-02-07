@@ -4,58 +4,57 @@ import dotenv from "dotenv";
 import { getEthBalanceMonthBack } from "./balance.js"; 
 import { fetchTopPerformingNativeCoins , fetchEthPrice} from "./top.js";
 
-dotenv.config();  // Load environment variables from .env file
+dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;  // Use environment variable for the port, default to 5000
+// Vercel sets the PORT automatically, but we keep this for local dev
+const PORT = process.env.PORT || 5000;
 
-app.use(cors());  // Enable CORS to allow requests from different origins
-app.use(express.json());  // Parse incoming requests with JSON payloads
+app.use(cors());
+app.use(express.json());
 
-// Define an endpoint to fetch Ethereum balance for a given wallet address
-app.get("/balance/:walletAddress", async (req, res) => {
-  const { walletAddress } = req.params;  // Extract the wallet address from URL parameters
+// 1. Health Check Route (Useful for debugging)
+app.get("/api", (req, res) => {
+  res.json({ status: "API is running", message: "Connect to /api/eth-price to see data" });
+});
+
+// 2. Updated routes with /api prefix
+app.get("/api/balance/:walletAddress", async (req, res) => {
+  const { walletAddress } = req.params;
   
   if (!walletAddress) {
     return res.status(400).json({ error: "Wallet address is required" });
   }
 
   try {
-    const balanceData = await getEthBalanceMonthBack(walletAddress);  // Fetch balance data
-    res.json(parseFloat(balanceData.balance));  // Send the balance data as a JSON response
+    const balanceData = await getEthBalanceMonthBack(walletAddress);
+    res.json(parseFloat(balanceData.balance));
   } catch (error) {
     res.status(500).json({ error: "Failed to retrieve balance", details: error.message });
   }
 });
 
-// Updated endpoint for top performing native coins
-app.get("/top-coins", async (req, res) => {
+app.get("/api/top-coins", async (req, res) => {
   try {
     const { symbolChangeArray, ethPrice: ethPriceChange } = await fetchTopPerformingNativeCoins();
-    
-    res.json({
-      symbolChangeArray,
-      ethPrice: ethPriceChange
-    });
+    res.json({ symbolChangeArray, ethPrice: ethPriceChange });
   } catch (error) {
-    res.status(500).json({ 
-      error: "Failed to fetch top coins", 
-      details: error.message 
-    });
+    res.status(500).json({ error: "Failed to fetch top coins", details: error.message });
   }
 });
-app.get("/eth-price", async (req, res) => {
+
+app.get("/api/eth-price", async (req, res) => {
   try {
     const ethPrice = await fetchEthPrice();
-    res.json(ethPrice);  // Send just the price number
+    res.json(ethPrice);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch ETH price", details: error.message });
   }
 });
-// Start the server
-// Remove app.listen() for Vercel, or wrap it:
+
+// Start the server ONLY if not on Vercel
 if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => console.log(`Server on ${PORT}`));
+  app.listen(PORT, () => console.log(`Server on http://localhost:${PORT}`));
 }
 
-export default app; // Vercel needs this export
+export default app;
